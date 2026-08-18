@@ -55,6 +55,18 @@
         .screen.active {
             display: block;
         }
+        
+        /* Блокировка масштабирования, щипков и даблтапа на iOS */
+html, body {
+  touch-action: pan-x pan-y !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+
+/* Отключение зума при фокусе на поля ввода */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
