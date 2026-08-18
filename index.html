@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>air chat / Home</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --panel-color: #1c1c1e;
+            --panel-hover: #2c2c2e;
+            --text-main: #ffffff;
+            --text-secondary: #8e8e93;
+            --accent: #0a84ff;
+            --green: #30d158;
+            --red: #ff453a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 430px;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-top: 10px;
+            height: 44px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.35px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 17px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 15px;
+            padding: 0;
+        }
+
+        .btn-add {
+            background: var(--panel-color);
+            border: none;
+            color: var(--accent);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-swipe-mode {
+            background: var(--panel-color);
+            border: none;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-delete-selected {
+            background: rgba(255, 69, 58, 0.2);
+            border: 1px solid rgba(255, 69, 58, 0.4);
+            color: var(--red);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .menu-item {
+            background: var(--panel-color);
+            border: none;
+            color: var(--text-main);
+            padding: 16px 20px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-item::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid var(--text-secondary);
+            border-right: 2px solid var(--text-secondary);
+            transform: rotate(45deg);
+        }
+
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-card {
+            background: var(--panel-color);
+            padding: 12px;
+            border-radius: 16px;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            align-items: center;
+            position: relative;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease, background 0.2s;
+        }
+
+        .item-card.deleting {
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+        }
+
+        .item-card.selectable {
+            padding-left: 44px;
+        }
+
+        .checkbox-custom {
+            display: none;
+            position: absolute;
+            left: 12px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--text-secondary);
+            background: transparent;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-card.selectable .checkbox-custom {
+            display: flex;
+        }
+
+        .item-card.selected .checkbox-custom {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .item-card.selected .checkbox-custom::after {
+            content: '';
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+
+        .item-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #2c2c2e;
+            flex-shrink: 0;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .item-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .tag-status {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tag-likely {
+            background: rgba(48, 209, 88, 0.2);
+            color: var(--green);
+            border: 1px solid rgba(48, 209, 88, 0.4);
+        }
+
+        .tag-doubtful {
+            background: rgba(255, 69, 58, 0.2);
+            color: var(--red);
+            border: 1px solid rgba(255, 69, 58, 0.4);
+        }
+
+        .empty-state {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 40px;
+            font-size: 15px;
+        }
+
+        .modal-overlay, .preview-overlay {
+            display: flex;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.active, .preview-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal, .preview-modal {
+            background: #2c2c2e;
+            width: 100%;
+            max-width: 340px;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal, .preview-overlay.active .preview-modal {
+            transform: scale(1);
+        }
+
+        .modal h3, .preview-modal h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        .modal input, .preview-modal input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: #1c1c1e;
+            color: var(--text-main);
+            font-size: 15px;
+            margin-bottom: 10px;
+            outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .modal-buttons, .preview-modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-buttons button, .btn-action-primary, .btn-action-secondary, .btn-action-save {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-cancel, .btn-action-secondary { background: #3a3a3c; color: var(--text-main); }
+        .btn-save, .btn-action-primary { background: var(--accent); color: #ffffff; }
+        .btn-action-save { background: var(--green); color: #ffffff; }
+
+        .swipe-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000000;
+            z-index: 300;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 20px 40px 20px;
+        }
+
+        .swipe-overlay.active { display: flex; }
+
+        .swipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-close-swipe {
+            background: var(--panel-color);
+            border: none;
+            color: var(--text-main);
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .swipe-cards-container {
+            flex: 1;
+            position: relative;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .swipe-card {
+            position: absolute;
+            width: 100%;
+            max-width: 360px;
+            height: 440px;
+            background: var(--panel-color);
+            border-radius: 28px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+            touch-action: none;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .swipe-card-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #2c2c2e;
+        }
+
+        .swipe-card-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .swipe-card-title {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .swipe-card-badge {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-none { background: #3a3a3c; color: var(--text-secondary); }
+
+        .swipe-badge-overlay {
+            position: absolute;
+            top: 25px;
+            font-size: 18px;
+            font-weight: 800;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 3px solid;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s ease;
+            z-index: 10;
+        }
+
+        .swipe-badge-like {
+            right: 20px;
+            color: var(--green);
+            border-color: var(--green);
+            transform: rotate(15deg);
+        }
+
+        .swipe-badge-dislike {
+            left: 20px;
+            color: var(--red);
+            border-color: var(--red);
+            transform: rotate(-15deg);
+        }
+
+        .swipe-controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .btn-swipe-action {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        .btn-dislike { background: #2c1a1a; border: 1px solid rgba(255,69,58,0.3); }
+        .btn-like { background: #1a2c1d; border: 1px solid rgba(48,209,88,0.3); }
+
+        .svg-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            vertical-align: middle;
+        }
+
+        .footer-admin {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-admin-icon {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .btn-admin-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+        }
+
+        .admin-stat-card {
+            background: #1c1c1e;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-user-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+
+        .history-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 13px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .admin-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn-mini-action {
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="screen-home" class="screen active">
+        <div class="header">
+            <h1>Квартира</h1>
+        </div>
+        <div class="menu-list">
+            <button class="menu-item" onclick="goToScreen('screen-purchase')">Надо приобрести</button>
+        </div>
+    </div>
+
+    <div id="screen-purchase" class="screen">
+        <button class="back-btn" onclick="goToScreen('screen-home')">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Назад
+        </button>
+        <div class="header" style="margin-top: 0;">
+            <h1>Приобрести</h1>
+        </div>
+        <div class="menu-list">
+            <button class="menu-item" onclick="goToScreen('screen-ads')">Объявления</button>
+        </div>
+    </div>
+
+    <div id="screen-ads" class="screen">
+        <button class="back-btn" id="ads-back-btn" onclick="goToScreen('screen-purchase')">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Назад
+        </button>
+        <div class="header" style="margin-top: 0;">
+            <h1>Объявления</h1>
+            <div class="header-actions">
+                <button class="btn-delete-selected" id="btn-delete-selected" onclick="deleteSelectedAds()">Удалить (0)</button>
+                <button class="btn-swipe-mode" id="btn-swipe-mode" onclick="openSwipeMode()">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm2 5h12v2H6zm3 5h6v2H9z"/></svg>
+                    Свайпер
+                </button>
+                <button class="btn-add" id="btn-add" onclick="toggleModal(true)">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+            </div>
+        </div>
+        
+        <div id="ads-container" class="items-list">
+            <div class="empty-state">Пока ничего нет. Нажми «+», чтобы добавить.</div>
+        </div>
+    </div>
+
+    <div id="screen-admin" class="screen">
+        <button class="back-btn" onclick="goToScreen('screen-home')">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Главная
+        </button>
+        <div class="header" style="margin-top: 0;">
+            <h1>Админ-панель</h1>
+        </div>
+
+        <div class="admin-stat-card">
+            <span>Онлайн сейчас:</span>
+            <strong id="admin-online-count" style="color: var(--green);">0</strong>
+        </div>
+        <div class="admin-stat-card">
+            <span>Всего объявлений:</span>
+            <strong id="admin-ads-count">0</strong>
+        </div>
+
+        <h3 style="margin: 20px 0 10px 0; font-size: 16px; color: var(--text-secondary);">Онлайн сессии (Realtime):</h3>
+        <div id="admin-users-list"></div>
+
+        <h3 style="margin: 20px 0 10px 0; font-size: 16px; color: var(--text-secondary);">История последних входов:</h3>
+        <div id="admin-login-history"></div>
+
+        <h3 style="margin: 20px 0 10px 0; font-size: 16px; color: var(--text-secondary);">Быстрое управление карточками:</h3>
+        <div id="admin-ads-list"></div>
+    </div>
+
+    <div class="footer-admin" id="footer-admin">
+        <button class="btn-admin-icon" onclick="promptAdminLogin()" title="Админка">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        </button>
+    </div>
+
+</div>
+
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <h3>Новое объявление</h3>
+        <input type="text" id="ad-title-input" placeholder="Название товара (например, Диван)...">
+        <input type="text" id="ad-input" placeholder="Ссылка (Ozon, WB, Авито)...">
+        <input type="text" id="ad-image-input" placeholder="Ссылка на картинку (опционально)...">
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="toggleModal(false)">Отмена</button>
+            <button class="btn-save" onclick="addAd()">Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="preview-overlay" id="preview-modal">
+    <div class="preview-modal">
+        <h3>Редактирование</h3>
+        <input type="text" id="edit-title-input" placeholder="Название товара...">
+        <input type="text" id="edit-url-input" placeholder="Ссылка на товар...">
+        <input type="text" id="edit-image-input" placeholder="Ссылка на картинку...">
+        <div class="preview-modal-actions">
+            <button class="btn-action-primary" onclick="openExternalLink()">Открыть</button>
+            <button class="btn-action-save" onclick="saveAdChanges()">Сохранить</button>
+            <button class="btn-action-secondary" onclick="closePreview()">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<div class="swipe-overlay" id="swipe-overlay">
+    <div class="swipe-header">
+        <span style="font-weight: 700; font-size: 18px;">Обзор вариантов</span>
+        <button class="btn-close-swipe" onclick="closeSwipeMode()">Готово</button>
+    </div>
+
+    <div class="swipe-cards-container" id="swipe-cards-container"></div>
+
+    <div class="swipe-controls">
+        <button class="btn-swipe-action btn-dislike" onclick="manualSwipe('left')">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: var(--red);"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+        <button class="btn-swipe-action btn-like" onclick="manualSwipe('right')">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 26px; height: 26px; fill: var(--green);"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getDatabase, ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB8K2VFhcrAHSBI4XYy7z6Vh5FeauMIsBI",
+      authDomain: "air-chat-9fea5.firebaseapp.com",
+      databaseURL: "https://air-chat-9fea5-default-rtdb.firebaseio.com",
+      projectId: "air-chat-9fea5",
+      storageBucket: "air-chat-9fea5.firebasestorage.app",
+      messagingSenderId: "574904252963",
+      appId: "1:574904252963:web:270702b241d59c0a29cf96"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const rdb = getDatabase(app);
+
+    let adsData = [];
+    let currentEditItem = null;
+    let swipeCardsStack = [];
+
+    let isSelectMode = false;
+    let selectedIds = new Set();
+    let longPressTimer = null;
+
+    // Определяем устройство / браузер
+    function getDeviceInfo() {
+        const ua = navigator.userAgent;
+        let device = "Браузер";
+        if (ua.includes('iPhone')) device = "iPhone";
+        else if (ua.includes('iPad')) device = "iPad";
+        else if (ua.includes('Android')) device = "Android";
+        else if (ua.includes('Macintosh')) device = "Mac";
+        else if (ua.includes('Windows')) device = "Windows ПК";
+
+        let browser = "";
+        if (ua.includes('CriOS') || (ua.includes('Chrome') && !ua.includes('Edg'))) browser = "Chrome";
+        else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = "Safari";
+        else if (ua.includes('Firefox')) browser = "Firefox";
+
+        return browser ? `${device} (${browser})` : device;
+    }
+
+    const deviceInfo = getDeviceInfo();
+    const sessionId = 'user_' + Math.random().toString(36).substring(2, 9);
+
+    // 1. Фиксируем вход в историю входов (Firestore)
+    async function logUserLogin() {
+        try {
+            await addDoc(collection(db, "logins"), {
+                device: deviceInfo,
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.error("Ошибка логирования входа:", e);
+        }
+    }
+    logUserLogin();
+
+    // 2. Мгновенный Presence API (Realtime Database)
+    const userPresenceRef = ref(rdb, 'presence/' + sessionId);
+    const connectedRef = ref(rdb, '.info/connected');
+
+    onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+            onDisconnect(userPresenceRef).remove();
+            set(userPresenceRef, {
+                online: true,
+                device: deviceInfo,
+                joinedAt: Date.now()
+            });
+        }
+    });
+
+    window.promptAdminLogin = function() {
+        const pass = prompt("Введи пароль админа:");
+        if (pass === "2525") {
+            goToScreen('screen-admin');
+        } else if (pass !== null) {
+            alert("Неверный пароль!");
+        }
+    }
+
+    window.goToScreen = function(screenId) {
+        if (isSelectMode) exitSelectMode();
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        document.getElementById('footer-admin').style.display = screenId === 'screen-admin' ? 'none' : 'flex';
+    }
+
+    window.toggleModal = function(show) {
+        const modal = document.getElementById('modal');
+        if (show) {
+            modal.classList.add('active');
+            document.getElementById('ad-title-input').value = '';
+            document.getElementById('ad-input').value = '';
+            document.getElementById('ad-image-input').value = '';
+            document.getElementById('ad-title-input').focus();
+        } else {
+            modal.classList.remove('active');
+        }
+    }
+
+    window.addAd = async function() {
+        const titleInput = document.getElementById('ad-title-input').value.trim();
+        const rawText = document.getElementById('ad-input').value.trim();
+        const manualImg = document.getElementById('ad-image-input').value.trim();
+
+        if (!rawText && !titleInput) return;
+
+        let title = titleInput;
+        let url = "";
+        let imageUrl = manualImg;
+
+        const urlMatch = rawText.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) url = urlMatch[1];
+        else if (rawText.startsWith('http://') || rawText.startsWith('https://')) url = rawText;
+
+        if (!title) {
+            const avitoMatch = rawText.match(/Посмотри объявление "(.*?)" на Авито:/i);
+            const wbMatch = rawText.match(/Смотри, что есть на Wildberries!\s*(.*?)\s*https?:/i);
+
+            if (avitoMatch) title = avitoMatch[1];
+            else if (wbMatch) title = wbMatch[1];
+            else if (url) {
+                let textBeforeUrl = rawText.replace(url, '').trim();
+                if (textBeforeUrl.length > 2) title = textBeforeUrl;
+                else {
+                    try { title = new URL(url).hostname.replace('www.', ''); } 
+                    catch (e) { title = "Товар"; }
+                }
+            } else title = rawText;
+        }
+
+        if (!imageUrl && url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) imageUrl = url;
+
+        try {
+            await addDoc(collection(db, "ads"), {
+                title: title,
+                url: url,
+                imageUrl: imageUrl,
+                status: 'none',
+                createdAt: Date.now()
+            });
+            toggleModal(false);
+        } catch (e) {
+            console.error("Ошибка добавления:", e);
+        }
+    }
+
+    window.openPreview = function(item) {
+        currentEditItem = item;
+        document.getElementById('edit-title-input').value = item.title || "";
+        document.getElementById('edit-url-input').value = item.url || "";
+        document.getElementById('edit-image-input').value = item.imageUrl || "";
+        document.getElementById('preview-modal').classList.add('active');
+    }
+
+    window.closePreview = function() {
+        document.getElementById('preview-modal').classList.remove('active');
+        currentEditItem = null;
+    }
+
+    window.saveAdChanges = async function() {
+        if (!currentEditItem) return;
+
+        const newTitle = document.getElementById('edit-title-input').value.trim();
+        const newUrl = document.getElementById('edit-url-input').value.trim();
+        const newImage = document.getElementById('edit-image-input').value.trim();
+
+        try {
+            await updateDoc(doc(db, "ads", currentEditItem.id), {
+                title: newTitle,
+                url: newUrl,
+                imageUrl: newImage
+            });
+            closePreview();
+        } catch (e) {
+            console.error("Ошибка сохранения редактирования:", e);
+        }
+    }
+
+    window.openExternalLink = function() {
+        if (currentEditItem && currentEditItem.url && currentEditItem.url.startsWith('http')) {
+            window.location.href = currentEditItem.url;
+        } else {
+            alert("У этого товара не указана корректная ссылка!");
+        }
+    }
+
+    function enterSelectMode(initialId) {
+        isSelectMode = true;
+        selectedIds.clear();
+        if (initialId) selectedIds.add(initialId);
+
+        document.getElementById('btn-swipe-mode').style.display = 'none';
+        document.getElementById('btn-add').style.display = 'none';
+        document.getElementById('btn-delete-selected').style.display = 'flex';
+
+        const backBtn = document.getElementById('ads-back-btn');
+        backBtn.innerHTML = 'Отмена';
+        backBtn.onclick = exitSelectMode;
+
+        updateUISelection();
+    }
+
+    function exitSelectMode() {
+        isSelectMode = false;
+        selectedIds.clear();
+
+        document.getElementById('btn-swipe-mode').style.display = 'flex';
+        document.getElementById('btn-add').style.display = 'flex';
+        document.getElementById('btn-delete-selected').style.display = 'none';
+
+        const backBtn = document.getElementById('ads-back-btn');
+        backBtn.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg> Назад`;
+        backBtn.onclick = function() { goToScreen('screen-purchase'); };
+
+        updateUISelection();
+    }
+
+    function toggleSelectItem(id) {
+        if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+            if (selectedIds.size === 0) { exitSelectMode(); return; }
+        } else {
+            selectedIds.add(id);
+        }
+        updateUISelection();
+    }
+
+    function updateUISelection() {
+        document.getElementById('btn-delete-selected').textContent = `Удалить (${selectedIds.size})`;
+        
+        document.querySelectorAll('.item-card').forEach(card => {
+            const id = card.dataset.id;
+            if (isSelectMode) {
+                card.classList.add('selectable');
+                if (selectedIds.has(id)) card.classList.add('selected');
+                else card.classList.remove('selected');
+            } else {
+                card.classList.remove('selectable', 'selected');
+            }
+        });
+    }
+
+    window.deleteSelectedAds = async function() {
+        if (selectedIds.size === 0) return;
+        
+        const idsToDelete = Array.from(selectedIds);
+        idsToDelete.forEach(id => {
+            const card = document.querySelector(`.item-card[data-id="${id}"]`);
+            if (card) card.classList.add('deleting');
+        });
+
+        exitSelectMode();
+
+        setTimeout(async () => {
+            for (let id of idsToDelete) {
+                try { await deleteDoc(doc(db, "ads", id)); } 
+                catch(e) { console.error("Ошибка удаления:", e); }
+            }
+        }, 250);
+    }
+
+    function initRealtimeSync() {
+        // Синхронизация объявлений
+        onSnapshot(collection(db, "ads"), (snapshot) => {
+            const container = document.getElementById('ads-container');
+            const adminAdsList = document.getElementById('admin-ads-list');
+            container.innerHTML = '';
+            adminAdsList.innerHTML = '';
+
+            adsData = [];
+            snapshot.forEach(docSnap => {
+                adsData.push({ id: docSnap.id, ...docSnap.data() });
+            });
+
+            adsData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            document.getElementById('admin-ads-count').textContent = adsData.length;
+
+            if (adsData.length === 0) {
+                container.innerHTML = `<div class="empty-state">Пока ничего нет. Нажми «+», чтобы добавить.</div>`;
+            }
+
+            adsData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.dataset.id = item.id;
+
+                let statusBadge = '';
+                if (item.status === 'likely') statusBadge = `<div class="tag-status tag-likely">Вероятно</div>`;
+                else if (item.status === 'doubtful') statusBadge = `<div class="tag-status tag-doubtful">Сомнительно</div>`;
+
+                const imgHtml = item.imageUrl 
+                    ? `<img src="${item.imageUrl}" class="item-thumb" alt="thumb" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'item-thumb\' style=\'display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;\'>НЕТ ФОТО</div>'">`
+                    : `<div class="item-thumb" style="display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;">НЕТ ФОТО</div>`;
+
+                card.innerHTML = `
+                    <div class="checkbox-custom"></div>
+                    ${imgHtml}
+                    <div class="item-info">
+                        <div class="item-card-top">
+                            <div class="item-title">${escapeHtml(item.title)}</div>
+                            ${statusBadge}
+                        </div>
+                        <div class="item-hint">${item.url ? 'Есть ссылка' : 'Только текст'}</div>
+                    </div>
+                `;
+
+                card.addEventListener('touchstart', (e) => startLongPress(e, item.id), {passive: true});
+                card.addEventListener('touchend', endLongPress);
+                card.addEventListener('touchmove', cancelLongPress);
+                card.addEventListener('mousedown', (e) => startLongPress(e, item.id));
+                card.addEventListener('mouseup', endLongPress);
+                card.addEventListener('mouseleave', cancelLongPress);
+
+                card.onclick = function(e) {
+                    if (card.dataset.longPressed === 'true') {
+                        card.dataset.longPressed = 'false';
+                        return;
+                    }
+                    if (isSelectMode) toggleSelectItem(item.id);
+                    else openPreview(item);
+                };
+
+                container.appendChild(card);
+
+                const adminRow = document.createElement('div');
+                adminRow.className = 'admin-item-row';
+                adminRow.innerHTML = `
+                    <span style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${escapeHtml(item.title)}</span>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-mini-action" style="background: rgba(48,209,88,0.2); color: var(--green);" onclick="setAdStatusAdmin('${item.id}', 'likely')">✓</button>
+                        <button class="btn-mini-action" style="background: rgba(255,69,58,0.2); color: var(--red);" onclick="setAdStatusAdmin('${item.id}', 'doubtful')">✕</button>
+                        <button class="btn-mini-action" style="background: #3a3a3c; color: #fff;" onclick="deleteAdAdmin('${item.id}')">Удалить</button>
+                    </div>
+                `;
+                adminAdsList.appendChild(adminRow);
+            });
+
+            if (isSelectMode) updateUISelection();
+        });
+
+        // Онлайн сейчас (Realtime DB)
+        const presenceListRef = ref(rdb, 'presence');
+        onValue(presenceListRef, (snapshot) => {
+            const usersList = document.getElementById('admin-users-list');
+            usersList.innerHTML = '';
+            
+            const data = snapshot.val();
+            let count = 0;
+
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    count++;
+                    const u = data[key];
+                    const isSelf = key === sessionId;
+                    const userEl = document.createElement('div');
+                    userEl.className = 'admin-user-item';
+                    userEl.innerHTML = `
+                        <div class="online-dot"></div>
+                        <span>${u.device || 'Устройство'}${isSelf ? ' — <b style="color:var(--accent)">Это вы</b>' : ''}</span>
+                    `;
+                    usersList.appendChild(userEl);
+                });
+            }
+
+            document.getElementById('admin-online-count').textContent = count;
+            if (count === 0) {
+                usersList.innerHTML = `<div style="color:var(--text-secondary); font-size:13px;">Никого нет онлайн</div>`;
+            }
+        });
+
+        // История входов (Firestore, последние 10)
+        const historyQuery = query(collection(db, "logins"), orderBy("timestamp", "desc"), limit(10));
+        onSnapshot(historyQuery, (snapshot) => {
+            const historyList = document.getElementById('admin-login-history');
+            historyList.innerHTML = '';
+
+            if (snapshot.empty) {
+                historyList.innerHTML = `<div style="color:var(--text-secondary); font-size:13px;">История пуста</div>`;
+                return;
+            }
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const dateStr = data.timestamp 
+                    ? new Date(data.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : 'Неизвестно';
+
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div style="font-weight: 500; color: var(--text-main);">${escapeHtml(data.device || 'Браузер')}</div>
+                    <div style="color: var(--text-secondary);">${dateStr}</div>
+                `;
+                historyList.appendChild(item);
+            });
+        });
+    }
+
+    window.setAdStatusAdmin = async function(id, status) {
+        try { await updateDoc(doc(db, "ads", id), { status }); } 
+        catch(e) { console.error(e); }
+    }
+
+    window.deleteAdAdmin = async function(id) {
+        if (confirm("Удалить карточку?")) {
+            try { await deleteDoc(doc(db, "ads", id)); } 
+            catch(e) { console.error(e); }
+        }
+    }
+
+    function startLongPress(e, id) {
+        cancelLongPress();
+        longPressTimer = setTimeout(() => {
+            const card = document.querySelector(`.item-card[data-id="${id}"]`);
+            if (card) card.dataset.longPressed = 'true';
+            if (!isSelectMode) enterSelectMode(id);
+        }, 400);
+    }
+
+    function cancelLongPress() {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    }
+
+    function endLongPress() { cancelLongPress(); }
+
+    window.openSwipeMode = function() {
+        if (adsData.length === 0) {
+            alert("Сначала добавь хотя бы одно объявление!");
+            return;
+        }
+        document.getElementById('swipe-overlay').classList.add('active');
+        swipeCardsStack = [...adsData];
+        renderSwipeCards();
+    }
+
+    window.closeSwipeMode = function() {
+        document.getElementById('swipe-overlay').classList.remove('active');
+    }
+
+    function renderSwipeCards() {
+        const container = document.getElementById('swipe-cards-container');
+
+        if (swipeCardsStack.length === 0) {
+            container.innerHTML = `<div class="empty-state" style="color:#fff;">Все варианты просмотрены!</div>`;
+            return;
+        }
+
+        const cardsToRender = swipeCardsStack.slice(-3);
+        const existingCards = container.querySelectorAll('.swipe-card');
+        
+        if (existingCards.length > 0 && existingCards.length === cardsToRender.length) {
+            existingCards.forEach((card, index) => {
+                const isTop = index === cardsToRender.length - 1;
+                const depth = cardsToRender.length - 1 - index;
+                card.style.transform = `translateY(${depth * -12}px) scale(${1 - depth * 0.04})`;
+                card.style.zIndex = index;
+
+                if (isTop && !card.dataset.dragInitialized) {
+                    initDrag(card, cardsToRender[index]);
+                    card.dataset.dragInitialized = "true";
+                }
+            });
+            return;
+        }
+
+        container.innerHTML = '';
+        cardsToRender.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'swipe-card';
+            const isTop = index === cardsToRender.length - 1;
+            const depth = cardsToRender.length - 1 - index;
+            
+            card.style.transform = `translateY(${depth * -12}px) scale(${1 - depth * 0.04})`;
+            card.style.zIndex = index;
+
+            let statusText = "Не размечено";
+            let statusClass = "badge-none";
+            if (item.status === 'likely') { statusText = "Более вероятно"; statusClass = "tag-likely"; }
+            if (item.status === 'doubtful') { statusText = "Сомнительно"; statusClass = "tag-doubtful"; }
+
+            const imgHeader = item.imageUrl 
+                ? `<img src="${item.imageUrl}" class="swipe-card-image" alt="cover" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'swipe-card-image\' style=\'display:flex;align-items:center;justify-content:center;color:#666;\'>Без фото</div>'">` 
+                : `<div class="swipe-card-image" style="display:flex;align-items:center;justify-content:center;color:#666;">Без фото</div>`;
+
+            card.innerHTML = `
+                <div class="swipe-badge-overlay swipe-badge-like">ВЕРОЯТНО</div>
+                <div class="swipe-badge-overlay swipe-badge-dislike">СОМНИТЕЛЬНО</div>
+                ${imgHeader}
+                <div class="swipe-card-content">
+                    <div class="swipe-card-badge ${statusClass}">${statusText}</div>
+                    <div class="swipe-card-title">${escapeHtml(item.title)}</div>
+                    <div style="color: var(--text-secondary); font-size: 13px; margin-top: auto;">
+                        ${item.url ? 'Ссылка прикреплена' : 'Без ссылки'}
+                    </div>
+                </div>
+            `;
+
+            if (isTop) {
+                initDrag(card, item);
+                card.dataset.dragInitialized = "true";
+            }
+
+            container.appendChild(card);
+        });
+    }
+
+    function initDrag(card, item) {
+        let startX = 0, currentX = 0;
+        const likeBadge = card.querySelector('.swipe-badge-like');
+        const dislikeBadge = card.querySelector('.swipe-badge-dislike');
+
+        function onStart(e) {
+            startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            card.style.transition = 'none';
+            document.addEventListener('touchmove', onMove);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchend', onEnd);
+            document.addEventListener('mouseup', onEnd);
+        }
+
+        function onMove(e) {
+            const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            currentX = x - startX;
+            card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.08}deg)`;
+
+            if (currentX > 30) {
+                likeBadge.style.opacity = Math.min(currentX / 100, 1);
+                dislikeBadge.style.opacity = 0;
+            } else if (currentX < -30) {
+                dislikeBadge.style.opacity = Math.min(Math.abs(currentX) / 100, 1);
+                likeBadge.style.opacity = 0;
+            } else {
+                likeBadge.style.opacity = 0;
+                dislikeBadge.style.opacity = 0;
+            }
+        }
+
+        async function onEnd() {
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            document.removeEventListener('mouseup', onEnd);
+
+            if (currentX > 100) processSwipe(card, item, 'right');
+            else if (currentX < -100) processSwipe(card, item, 'left');
+            else {
+                card.style.transition = 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)';
+                card.style.transform = 'translate(0, 0) rotate(0deg)';
+                likeBadge.style.opacity = 0;
+                dislikeBadge.style.opacity = 0;
+            }
+        }
+
+        card.addEventListener('touchstart', onStart);
+        card.addEventListener('mousedown', onStart);
+    }
+
+    window.manualSwipe = function(direction) {
+        if (swipeCardsStack.length === 0) return;
+        const topCard = document.querySelector('.swipe-cards-container .swipe-card:last-child');
+        const item = swipeCardsStack[swipeCardsStack.length - 1];
+        if (topCard && item) processSwipe(topCard, item, direction);
+    }
+
+    async function processSwipe(card, item, direction) {
+        const moveX = direction === 'right' ? 500 : -500;
+        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        card.style.transform = `translateX(${moveX}px) rotate(${direction === 'right' ? 30 : -30}deg)`;
+        card.style.opacity = 0;
+
+        try {
+            await updateDoc(doc(db, "ads", item.id), { status: direction === 'right' ? 'likely' : 'doubtful' });
+        } catch(e) { console.error("Ошибка обновления статуса:", e); }
+
+        setTimeout(() => {
+            card.remove();
+            swipeCardsStack.pop();
+            renderSwipeCards();
+        }, 200);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    initRealtimeSync();
+
+    document.getElementById('ad-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') window.addAd();
+    });
+</script>
+
+</body>
+</html>
